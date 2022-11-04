@@ -1,0 +1,290 @@
+<html lang="eng">
+  <head>
+    <meta charset="UTF-8">
+    <title>Word game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style type="text/css">
+    	body{
+  background-color: #a26dbf;
+  text-align: center;
+  border: 2px solid lightblue;
+  width: 300px;
+  height: auto;
+  position: absolute;
+  top: calc(50vh - 150px);
+  left: calc(50vw - 150px);
+}
+
+#level, #gameVar{
+  justify-content: center;  
+  display: flex;
+  margin: auto;
+}
+
+#level >*{
+  flex: 0 0 20px;
+}
+
+#gameVar >*{
+  flex: 0 0 100px;
+}
+
+#title{
+  font-size: 2em;
+  border-bottom: 1px solid lightblue;
+}
+
+#settings{
+  background: ;
+  font-size: 1em;
+  border-bottom: 1px solid lightblue;
+}
+
+#gameVar{
+  background: ;
+  font-size: 1em;
+}
+
+#player{
+  background: ;
+  font-size: 1em;
+}
+
+#restart{
+  background: ;
+  font-size: 1em;
+}
+
+#keyboard{
+  border: 1px solid lightblue;
+  font-size: 1em;
+  color: blue;
+}
+
+#gameOver{
+  display: none;
+  font-size: 2em;
+  background-color: black;
+  color: red;
+  font-weight: bolder;
+}
+
+#restartDiv{
+  background: ;
+  font-size: 1em;
+}
+    </style>
+  </head>
+  <body>
+    <div style="background-color: #f9563a; padding: 3px;">
+    	<div id="title">
+      <p></p>
+     <h2 class="text-center text-light">MINI WORD GAME</h2> 
+      <p></p>
+    </div>
+    <div id="gameOver">
+      GAME OVER
+    </div>
+    <div id="gameWindow">
+      <div id="settings">
+        <p></p>
+        <strong class="text-light">LEVEL</strong> 
+        <form id="level" class="form-group">
+          <input type="radio" name="level" value=0 checked class="form-control"> Easy 
+          <input type="radio" name="level" value=1 class="form-control"> Medium 
+          <input type="radio" name="level" value=2 class="form-control"> Hard 
+        </form>
+        <br>
+      </div>
+      <div id="gameVar">
+        <p id="time">time:</p>
+        <p id="score">score:</p>
+        <br>
+      </div>
+      <div id="instructions" class="bg-info text-light p-1">
+        Type:
+      </div>
+      <div id="player">
+        <p></p>
+        <input id="keyboard" type="text" name="keyboard" autocomplete="false" class="form-control">
+      </div>
+    </div>
+    <div id="restartDiv">
+      <br>
+      <button id="restart" class="btn btn-warning">RE-START</button>
+      <p></p>
+    </div> 
+    </div>
+
+<script type="text/javascript">
+	// words library (easy, medium, hard)
+var wordsArray0 = ['one', 'two', 'bye', 'ice', 'mix', 'zoo', 'ten', 'red'];
+var wordsArray1 = ['seven', 'world', 'three', 'phone', 'train', 'koala', 'route', 'lucky'];
+var wordsArray2 = ['technology', 'television', 'mississipi', 'university', 'documentary', 'videoplayer', 'sometimes', 'philosophy'];
+var words = [wordsArray0, wordsArray1, wordsArray2];
+
+//console.log("running");
+window.addEventListener('load', init);
+window.preventDefault;
+
+// game word and player attempt
+var wordToType;
+var wordTyped;
+
+// game status variables
+const TIME = 5;
+var gameStarted;
+var time;
+var level = 0;
+var totScore;
+
+var qSLevel = document.querySelector("#level");
+var qSKeyboard = document.querySelector("#keyboard");
+var qSRestart = document.querySelector("#restart");
+var qSInstructions = document.querySelector('#instructions');
+var qSScore = document.querySelector('#score');
+var qSTime = document.querySelector('#time');
+var qSSettings = document.querySelector('#settings');
+var qSPlayer = document.querySelector('#player');
+var qSGameWindow = document.querySelector('#gameWindow');
+var qSGameOver = document.querySelector('#gameOver');
+
+function init(){
+  
+  gameStarted = false;
+  time = TIME;
+  totScore = 0;
+  score();
+  timer();
+  //console.log("loaded");
+  //assignement of event listeners to DOM objects
+  
+  qSLevel.addEventListener('change', function(evt){
+    //console.log("level");
+    var levels = document.getElementsByName("level");
+    if (levels) {
+        for (var i = 0; i < levels.length; i++) {
+            if (levels[i].checked){
+                 level = parseInt(levels[i].value);
+            }
+        }
+    }
+    
+    newWord();
+  });
+  
+  qSKeyboard.setAttribute("autocomplete","off");
+  qSKeyboard.setAttribute("autocorrect","off");
+  
+  qSKeyboard.addEventListener('mouseover', function(evt){
+    //console.log("player in");
+    if (!gameStarted){
+      evt.target.value = "type to start playing";
+    }
+  });
+  
+  qSKeyboard.addEventListener('mouseout', function(evt){
+    //console.log("player out");
+    if (!gameStarted){
+      evt.target.value = "";
+    }
+  });
+  
+  qSKeyboard.addEventListener('focus', function(evt){
+    //console.log("ready to write");
+    if (!gameStarted){
+      evt.target.value = "";
+        
+      qSKeyboard.addEventListener('keyup', function(evt){
+        evt.preventDefault();
+        wordTyped = evt.target.value;
+        checkWord();
+      });
+      gameStarted = true;
+      timer();
+    }
+    else {
+      checkWord();
+    }
+    //console.log("start");
+  });
+  
+  qSKeyboard.addEventListener('input', function(evt){
+    //console.log("written");
+    if (!gameStarted){
+      evt.target.value = "";
+    }
+  });
+  
+  qSRestart.addEventListener('click', function(evt){
+    qSGameWindow.style.display = "block";
+    qSGameOver.style.display = "none";  
+    init();
+  });
+  
+  
+  newWord();
+}
+
+function newWord(){
+  //console.log("newWord1");
+  var num = Math.round(Math.random()*(words[level].length - 1));
+  wordToType = words[level][num];
+  
+  qSInstructions.innerHTML="Type: \"" + wordToType + "\"";
+  //console.log("newWord2");
+}
+
+function checkWord(){
+  if (gameStarted){
+    if (wordTyped === wordToType){
+      console.log("OK");
+      newWord();
+      score();
+      time = TIME + 1;
+      qSKeyboard.value = "";
+    }
+    else {
+      console.log("NOK");
+    }
+  }
+  else {
+    console.log("not started");
+  }
+}
+
+function score() {
+  if (gameStarted) {
+    totScore =  totScore + level + 1;
+    qSScore.innerHTML = "score: " + totScore;
+  }
+  else {
+    qSScore.innerHTML = "score: " + totScore;
+  }
+}
+
+function timer(){
+  if (gameStarted){
+    if (time > 0){
+      time--;
+      qSTime.innerHTML = 'time: ' + time;
+      var delay = setTimeout(timer, 1000);
+    }
+    else {
+      gameOver();
+    }
+  }
+  else {
+    qSTime.innerHTML = 'time: ' + time;
+  }
+}
+
+function gameOver(){
+  qSGameWindow.style.display = "none";
+  qSGameOver.style.display = "block";
+}
+</script>
+
+  </body>
+</html>
